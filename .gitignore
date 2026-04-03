@@ -1,0 +1,28 @@
+# Build outputs
+bin/
+obj/
+*.user
+
+# User Secrets (never commit)
+secrets.json
+
+# Rider / VS
+.idea/
+.vs/
+*.suo
+*.DotSettings.user
+
+# Docker volumes (if mounted locally)
+.docker-data/
+
+# dotnet publish output
+publish/
+
+# NuGet
+*.nupkg
+.nuget/
+
+# OS
+.DS_Store
+Thumbs.db
+/.claude/settings.local.json
