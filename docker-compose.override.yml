@@ -1,0 +1,8 @@
+version: "3.8"
+
+# Development overrides — do not commit secrets here.
+# Set real values via environment variables or User Secrets.
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: password

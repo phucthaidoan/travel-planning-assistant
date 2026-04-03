@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TravelAssistant.Console/TravelAssistant.Console.csproj" />
+    <Project Path="src/TravelAssistant.Core/TravelAssistant.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TravelAssistant.Tests/TravelAssistant.Tests.csproj" />
+  </Folder>
+</Solution>
