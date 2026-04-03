@@ -30,9 +30,34 @@ builder.Services.AddOpenTelemetry()
         .SetResourceBuilder(
             ResourceBuilder.CreateDefault().AddService(TravelActivitySource.ServiceName))
         .AddSource(TravelActivitySource.ServiceName)
-        .AddHttpClientInstrumentation()           // AC-3: outbound HTTP calls become child spans
+        .AddHttpClientInstrumentation()           // AC-3 (US-02): outbound HTTP child spans
         .AddOtlpExporter(opt =>
             opt.Endpoint = new Uri(jaegerEndpoint)));
+
+// AC-4 (US-03): emit Polly retry/circuit-breaker events onto the active OTel span
+builder.Services.AddResilienceEnricher();
+
+// Named HttpClients for OpenAI and Qdrant — real clients wired in US-04+
+builder.Services.AddHttpClient("openai");
+builder.Services.AddHttpClient("qdrant");
+
+// Shared Polly resilience pipeline applied to all IHttpClientFactory clients (AC-1, AC-3)
+builder.Services.ConfigureHttpClientDefaults(http =>
+{
+    http.AddStandardResilienceHandler(options =>
+    {
+        // Exponential-backoff retry — 3 attempts
+        options.Retry.MaxRetryAttempts = 3;
+        options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+        options.Retry.Delay = TimeSpan.FromSeconds(1);
+
+        // Circuit-breaker — trips after 5 failures in a 30s window, breaks for 30s
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+        options.CircuitBreaker.MinimumThroughput = 5;
+        options.CircuitBreaker.FailureRatio = 0.5;
+        options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+    });
+});
 
 IHost host = builder.Build();
 
