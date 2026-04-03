@@ -6,7 +6,7 @@
 | Story ID | Epic | Title | Complexity | Sprint | Status | Blocked By |
 |----------|------|-------|------------|--------|--------|------------|
 | US-01 | EP-01 | Solution scaffold and MAF RC4 wiring | M | Sprint 1 | Done | — |
-| US-02 | EP-01 | OpenTelemetry + Jaeger observability baseline | M | Sprint 1 | Backlog | US-01 |
+| US-02 | EP-01 | OpenTelemetry + Jaeger observability baseline | M | Sprint 1 | Done | — |
 | US-03 | EP-01 | Polly resilience on all outbound calls | S | Sprint 1 | Backlog | US-01, US-02 |
 | US-04 | EP-02 | OrchestratorAgent with session lifecycle | M | Sprint 1 | Backlog | US-01, US-02, US-03 |
 | US-06 | EP-02 | Message history reduction pipeline | S | Sprint 1 | Backlog | US-04 |
