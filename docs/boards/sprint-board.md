@@ -13,7 +13,7 @@
 | US-01 | Solution scaffold and MAF RC4 wiring | M | Done | |
 | US-02 | OpenTelemetry + Jaeger observability baseline | M | Done | |
 | US-03 | Polly resilience on all outbound calls | S | Done | |
-| US-04 | OrchestratorAgent with session lifecycle | M | To Do | Depends on US-01, US-02, US-03 |
+| US-04 | OrchestratorAgent with session lifecycle | M | Done | |
 | US-06 | Message history reduction pipeline | S | To Do | Depends on US-04 |
 
 ---

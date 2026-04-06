@@ -11,7 +11,7 @@
 | Solution builds and runs end-to-end | US-01 | Done | Sprint 1 |
 | OTel spans visible in Jaeger | US-02 | Done | Sprint 1 |
 | Polly retry + circuit-breaker wired | US-03 | Done | Sprint 1 |
-| OrchestratorAgent multi-turn session works | US-04 | Not Started | Sprint 1 |
+| OrchestratorAgent multi-turn session works | US-04 | Done | Sprint 1 |
 | History reduction prevents token overflow | US-06 | Not Started | Sprint 1 |
 | TripPlan structured state (L2) validated | US-07 | Not Started | Sprint 2 |
 | Sessions persist and resume across restarts | US-08 | Not Started | Sprint 2 |
