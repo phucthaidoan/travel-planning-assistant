@@ -1,10 +1,16 @@
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenAI;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using System.ClientModel;
+using System.ClientModel.Primitives;
 using TravelAssistant.Console;
+using TravelAssistant.Core.Agents;
 using TravelAssistant.Core.Configuration;
 using TravelAssistant.Core.Telemetry;
 
@@ -60,14 +66,54 @@ builder.Services.ConfigureHttpClientDefaults(http =>
 });
 
 IHost host = builder.Build();
+await host.StartAsync();
 
-// Placeholder handler — replaced in US-04 when OrchestratorAgent is wired
-static async Task<string> PlaceholderHandler(string message)
+// Read OpenAI credentials directly from configuration (user secrets override appsettings.json)
+var apiKey  = builder.Configuration["OpenAI:ApiKey"]
+    ?? throw new InvalidOperationException(
+        "OpenAI:ApiKey is not configured. Set it via user secrets: " +
+        "dotnet user-secrets set \"OpenAI:ApiKey\" \"<key>\" --project src/TravelAssistant.Console");
+var modelId = builder.Configuration["OpenAI:ChatModelId"] ?? "gpt-4.1-nano";
+
+var httpClientFactory = host.Services.GetRequiredService<IHttpClientFactory>();
+var httpClient = httpClientFactory.CreateClient("openai");
+
+// Build OpenAI client using the named HttpClient (Polly resilience pipeline applied automatically)
+var openAiClient = new OpenAIClient(
+    new ApiKeyCredential(apiKey),
+    new OpenAIClientOptions { Transport = new HttpClientPipelineTransport(httpClient) });
+IChatClient chatClient = openAiClient
+    .GetChatClient(modelId)
+    .AsIChatClient()
+    .AsBuilder()
+    .UseOpenTelemetry(
+        sourceName: TravelActivitySource.ServiceName,
+        configure: c => c.EnableSensitiveData = true)
+    .Build();
+
+// Session span — lives for the duration of the console loop (AC-5: agent.session_id tag)
+string sessionId = Guid.NewGuid().ToString();
+using var sessionSpan = TravelActivitySource.StartAgentSession(sessionId);
+
+// Build OrchestratorAgent with one routing edge (AC-1: itinerary_agent)
+ChatClientAgent itineraryStub = SpecialistStub.Create(
+    chatClient,
+    "itinerary_agent",
+    "You are a travel itinerary planning specialist. Help users plan trip itineraries.");
+
+AIAgent orchestrator = OrchestratorAgentFactory.Create(
+    chatClient,
+    [itineraryStub],
+    onToolInvoked: toolName => sessionSpan?.SetTag("routing_target", toolName));
+
+// AC-2: CreateSessionAsync produces a session; RunAsync executes the pipeline
+AgentSession session = await orchestrator.CreateSessionAsync();
+
+// AC-4: Console loop continuously reads input and calls RunAsync (AC-3: same session preserves history)
+await ConsoleLoop.RunAsync(async message =>
 {
-    var sessionId = Guid.NewGuid().ToString();
-    using var span = TravelActivitySource.StartAgentSession(sessionId);
-    await Task.Yield();
-    return $"[Scaffold] Echo: {message} (agent not yet wired — US-04)";
-}
+    AgentResponse response = await orchestrator.RunAsync(message, session);
+    return response.Text;
+});
 
-await ConsoleLoop.RunAsync(PlaceholderHandler);
+await host.StopAsync();
